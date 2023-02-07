@@ -4,7 +4,7 @@ const width   = canvas.width;
 const height  = canvas.height;
 const imgData = context.getImageData(0, 0, width, height);
 const data    = imgData.data;
-const simplex = new Simplex({distrib: 2, scale: .004, aplitude: 1, octaves: 8});
+const simplex = new Simplex({distrib: 2, scale: .004, aplitude: 1, octaves: 10});
 
 let t         = 0;
 
@@ -14,7 +14,14 @@ const forest = [34, 139, 34];
 const rocks  = [139, 137, 137];
 const snow   = [255, 250, 250];
 
-let color = []
+const radius2 = (width/2)**2;
+const radius05 = radius2/2;
+
+const xOffs = width / 2;
+const yOffs = height / 2;
+
+let color = sea;
+let coef  = 1;
 
 function dot(x, y, r, g, b) {
     const offs = (y * width + x) * 4;
@@ -35,13 +42,19 @@ function dot(x, y, r, g, b) {
 function draw() {
     for(let y = 0; y < height; y++) {
         for(let x = 0; x < width; x++) {
-            const z = simplex.noise(x, y, t);
-            if (z < 0.2) {color = sea}
-            else if(z >= 0.2 && z < 0.4) {color = ground}
-            else if(z >= 0.4 && z < 0.6) {color = forest}
-            else if(z >= 0.6 && z < 0.8) {color = rocks}
-            else if(z >= 0.8 && z < 1) {color = snow}
-            dot(x, y, color[0], color[1], color[2]);
+            color = sea;
+            const r2 = (x - xOffs)**2 + (y - yOffs)**2;
+
+            const z = simplex.noise(x, y, t) * (r2 > radius05 ? radius2 / r2 - 1 : 1) ;
+
+            if(r2 < radius2) {
+                if (z < 0.2) {color = sea; coef = (z - 0.2) * 2 + 1.2}
+                else if(z >= 0.2 && z < 0.4) {color = ground; coef = (z - 0.4) * 2 + 1.2}
+                else if(z >= 0.4 && z < 0.6) {color = forest; coef = (z - 0.6) * 2 + 1.2}
+                else if(z >= 0.6 && z < 0.8) {color = rocks; coef = (z - 0.8) * 2 + 1.2}
+                else if(z >= 0.8) {color = snow; coef = (z - 1) * 2 + 1.2}
+            }
+            dot(x, y, color[0] * coef, color[1] * coef, color[2] * coef);
         }
     }
     t += .01;
